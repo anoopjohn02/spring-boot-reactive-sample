@@ -1,2 +1,2 @@
-# spring-boot-reactive-sample
-Reactive Programing Using Spring Boot - Incomplet
+# spring-boot-reactive-sample - Incomplete
+Experimenting how Reactive Programing Works Using Spring Boot 
