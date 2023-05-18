@@ -39,24 +39,21 @@ public class DeviceService {
         return Mono.zip(cloudService.getDeviceDetails(user, deviceId),
                         getLocalMeasurements(deviceId),
                         getAlerts(deviceId))
-                .log()
-                .flatMap(objects -> {
+                .map(objects -> {
                     DeviceDetails deviceDetails =
                             new DeviceDetails(objects.getT1(), objects.getT2(), objects.getT3());
-                    return Mono.just(deviceDetails);
+                    return deviceDetails;
                 });
     }
 
     private Mono<List<Alert>> getAlerts(String deviceId) {
         log.info("Fetching alerts for {}", deviceId);
-        return  Mono.zip(
-                getLocalAlerts(deviceId),
-                cloudService.getDeviceAlerts(deviceId))
-                .log()
-                .flatMap(objects -> {
+        return getLocalAlerts(deviceId)
+                .zipWith(cloudService.getDeviceAlerts(deviceId))
+                .map(objects -> {
                     List<Alert> combined = Stream.concat(objects.getT1().stream(), objects.getT2().stream())
-                    .collect(Collectors.toList());
-                    return Mono.just(combined);
+                            .collect(Collectors.toList());
+                    return combined;
                 });
     }
 

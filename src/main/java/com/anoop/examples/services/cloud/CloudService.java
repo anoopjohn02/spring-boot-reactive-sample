@@ -106,7 +106,7 @@ public class CloudService {
                 UriComponentsBuilder.fromUriString(url)
                         .build().expand(deviceId).encode();
         return webClient.get().uri(uriComponents.toUri()).retrieve().bodyToMono(
-                new ParameterizedTypeReference<List<Alert>>() {}).log();
+                new ParameterizedTypeReference<List<Alert>>() {});
     }
 
     public boolean userCanAccessDevice(IotoUser user) {
