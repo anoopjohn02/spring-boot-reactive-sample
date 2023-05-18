@@ -124,6 +124,7 @@ public class MeasurementService {
      * @return list of {@link Measurement}
      */
     public List<Measurement> getByDeviceId(String deviceId) {
+        log.info("Fetching measurements for {}", deviceId);
         List<MeasurementEntity> entities = repository.findByDeviceId(deviceId);
         return entities.stream()
                 .map(this::getMeasurement)

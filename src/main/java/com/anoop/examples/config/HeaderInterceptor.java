@@ -14,6 +14,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.IOException;
 
+@Deprecated
 @Component
 public class HeaderInterceptor implements ClientHttpRequestInterceptor {
     public static final String AUTH_HEADER = "Authorization";

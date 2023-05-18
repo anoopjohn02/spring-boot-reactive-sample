@@ -36,10 +36,10 @@ public class DeviceService {
      * @return {@link DeviceDetails}
      */
     public Mono<DeviceDetails> getDeviceDetails(String deviceId, IotoUser user) {
-        Mono<Device> device = Mono.just(cloudService.getDeviceDetails(user, deviceId));
-        Mono<List<Measurement>> measurements = Mono.just(measurementService.getByDeviceId(deviceId));
-        Mono<List<Alert>> alerts = getAlerts(deviceId);
-        return Mono.zip(device, measurements, alerts)
+        return Mono.zip(cloudService.getDeviceDetails(user, deviceId),
+                        getLocalMeasurements(deviceId),
+                        getAlerts(deviceId))
+                .log()
                 .flatMap(objects -> {
                     DeviceDetails deviceDetails =
                             new DeviceDetails(objects.getT1(), objects.getT2(), objects.getT3());
@@ -49,13 +49,22 @@ public class DeviceService {
 
     private Mono<List<Alert>> getAlerts(String deviceId) {
         log.info("Fetching alerts for {}", deviceId);
-        Mono<List<Alert>> local = Mono.just(alertService.getByDeviceId(deviceId));
-        Mono<List<Alert>> cloud = Mono.just(cloudService.getDeviceAlerts(deviceId));
-
-        return  Mono.zip(local, cloud).flatMap(objects -> {
-            List<Alert> combined = Stream.concat(objects.getT1().stream(), objects.getT2().stream())
+        return  Mono.zip(
+                getLocalAlerts(deviceId),
+                cloudService.getDeviceAlerts(deviceId))
+                .log()
+                .flatMap(objects -> {
+                    List<Alert> combined = Stream.concat(objects.getT1().stream(), objects.getT2().stream())
                     .collect(Collectors.toList());
-            return Mono.just(combined);
-        });
+                    return Mono.just(combined);
+                });
+    }
+
+    private Mono<List<Measurement>> getLocalMeasurements(String deviceId) {
+        return Mono.just(measurementService.getByDeviceId(deviceId));
+    }
+
+    private Mono<List<Alert>> getLocalAlerts(String deviceId) {
+        return Mono.just(alertService.getByDeviceId(deviceId));
     }
 }

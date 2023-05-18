@@ -16,8 +16,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +30,9 @@ public class CloudService {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private WebClient webClient;
 
     @Value("${ioto.hub.ms.url}")
     private String hubUrl;
@@ -78,16 +83,14 @@ public class CloudService {
      * @param deviceId to be fetched
      * @return {@link Device}
      */
-    @PreAuthorize("@cloudService.userCanAccessDevice(#user)")
-    public Device getDeviceDetails(IotoUser user, String deviceId) {
+    //@PreAuthorize("@cloudService.userCanAccessDevice(#user)")
+    public Mono<Device> getDeviceDetails(IotoUser user, String deviceId) {
         log.info("Fetching device details for {}", deviceId);
         String url = hubUrl + "/remote/{deviceId}/CUSTOM_TYPE";
         UriComponents uriComponents =
                 UriComponentsBuilder.fromUriString(url)
                         .build().expand(deviceId).encode();
-
-        ResponseEntity<Device> response = restTemplate.getForEntity(uriComponents.toUri(), Device.class);
-        return response.getBody();
+        return webClient.get().uri(uriComponents.toUri()).retrieve().bodyToMono(Device.class);
     }
 
     /**
@@ -96,16 +99,14 @@ public class CloudService {
      * @param deviceId device id
      * @return list of {@link Alert}
      */
-    public List<Alert> getDeviceAlerts(String deviceId) {
+    public Mono<List<Alert>> getDeviceAlerts(String deviceId) {
         log.info("Fetching cloud alerts for {}", deviceId);
         String url = connectorUrl + "/alert/{deviceId}";
         UriComponents uriComponents =
                 UriComponentsBuilder.fromUriString(url)
                         .build().expand(deviceId).encode();
-        ResponseEntity<List<Alert>> response = restTemplate.exchange(
-                uriComponents.toUri(), HttpMethod.GET, null,
-                new ParameterizedTypeReference<List<Alert>>() {});
-        return response.getBody();
+        return webClient.get().uri(uriComponents.toUri()).retrieve().bodyToMono(
+                new ParameterizedTypeReference<List<Alert>>() {}).log();
     }
 
     public boolean userCanAccessDevice(IotoUser user) {

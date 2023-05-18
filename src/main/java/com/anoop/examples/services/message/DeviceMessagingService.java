@@ -21,7 +21,7 @@ public class DeviceMessagingService implements IotoMessageHandler {
     /**
      * Method will send device heart-beat in every 5 seconds.
      */
-    @Scheduled(fixedDelay = 5000)
+    //@Scheduled(fixedDelay = 5000)
     public void sendHeartBeat() {
         try {
             if(!gateway.isConnected()){
