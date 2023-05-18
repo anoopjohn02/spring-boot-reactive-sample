@@ -80,6 +80,7 @@ public class CloudService {
      */
     @PreAuthorize("@cloudService.userCanAccessDevice(#user)")
     public Device getDeviceDetails(IotoUser user, String deviceId) {
+        log.info("Fetching device details for {}", deviceId);
         String url = hubUrl + "/remote/{deviceId}/CUSTOM_TYPE";
         UriComponents uriComponents =
                 UriComponentsBuilder.fromUriString(url)
@@ -96,6 +97,7 @@ public class CloudService {
      * @return list of {@link Alert}
      */
     public List<Alert> getDeviceAlerts(String deviceId) {
+        log.info("Fetching cloud alerts for {}", deviceId);
         String url = connectorUrl + "/alert/{deviceId}";
         UriComponents uriComponents =
                 UriComponentsBuilder.fromUriString(url)

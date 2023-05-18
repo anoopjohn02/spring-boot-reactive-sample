@@ -10,12 +10,14 @@ import org.springframework.core.MethodParameter;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.support.WebDataBinderFactory;
-import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.method.support.ModelAndViewContainer;
+import org.springframework.web.reactive.BindingContext;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.reactive.result.method.HandlerMethodArgumentResolver;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
 import java.security.Principal;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,15 +41,17 @@ public class IotoUserProvider implements HandlerMethodArgumentResolver {
     }
 
     @Override
-    public IotoUser resolveArgument(MethodParameter methodParameter,
-                                    ModelAndViewContainer modelAndViewContainer,
-                                    NativeWebRequest nativeWebRequest,
-                                    WebDataBinderFactory webDataBinderFactory) {
+    public Mono<Object> resolveArgument(MethodParameter methodParameter,
+                                        BindingContext bindingContext,
+                                        ServerWebExchange exchange) {
         if (supportsParameter(methodParameter)) {
-            Principal principal = nativeWebRequest.getUserPrincipal();
-            return getIotoActiveUser(principal);
+            return exchange.getPrincipal()
+                    .flatMap(principal -> {
+                        IotoUser temp = getIotoActiveUser(principal);
+                        return Mono.just(temp);
+                    });
         } else {
-            return null;
+            return Mono.empty();
         }
     }
 

@@ -11,6 +11,7 @@ import com.anoop.examples.services.measurements.MeasurementService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,17 +35,27 @@ public class DeviceService {
      * @param deviceId Device Id
      * @return {@link DeviceDetails}
      */
-    public DeviceDetails getDeviceDetails(String deviceId, IotoUser user) {
-        Device device = cloudService.getDeviceDetails(user, deviceId);
-        List<Measurement> measurements = measurementService.getByDeviceId(deviceId);
-        List<Alert> alerts = getAlerts(deviceId);
-        return new DeviceDetails(device, measurements, alerts);
+    public Mono<DeviceDetails> getDeviceDetails(String deviceId, IotoUser user) {
+        Mono<Device> device = Mono.just(cloudService.getDeviceDetails(user, deviceId));
+        Mono<List<Measurement>> measurements = Mono.just(measurementService.getByDeviceId(deviceId));
+        Mono<List<Alert>> alerts = getAlerts(deviceId);
+        return Mono.zip(device, measurements, alerts)
+                .flatMap(objects -> {
+                    DeviceDetails deviceDetails =
+                            new DeviceDetails(objects.getT1(), objects.getT2(), objects.getT3());
+                    return Mono.just(deviceDetails);
+                });
     }
 
-    private List<Alert> getAlerts(String deviceId) {
-        List<Alert> local = alertService.getByDeviceId(deviceId);
-        List<Alert> cloud = cloudService.getDeviceAlerts(deviceId);
-        return Stream.concat(local.stream(), cloud.stream())
-                .collect(Collectors.toList());
+    private Mono<List<Alert>> getAlerts(String deviceId) {
+        log.info("Fetching alerts for {}", deviceId);
+        Mono<List<Alert>> local = Mono.just(alertService.getByDeviceId(deviceId));
+        Mono<List<Alert>> cloud = Mono.just(cloudService.getDeviceAlerts(deviceId));
+
+        return  Mono.zip(local, cloud).flatMap(objects -> {
+            List<Alert> combined = Stream.concat(objects.getT1().stream(), objects.getT2().stream())
+                    .collect(Collectors.toList());
+            return Mono.just(combined);
+        });
     }
 }

@@ -68,6 +68,7 @@ public class AlertService {
      * @return list of {@link Alert}
      */
     public List<Alert> getByDeviceId(String deviceId) {
+        log.info("Fetching local alerts for {}", deviceId);
         List<AlertEntity> entities = alertRepository.findByDeviceId(deviceId);
         return entities.stream()
                 .map(this::getAlert)
